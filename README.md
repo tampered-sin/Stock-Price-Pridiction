@@ -15,7 +15,7 @@ A comprehensive machine learning system for predicting stock prices using LSTM n
 ## Project Structure
 
 ```
-stock_prediction_project/
+Stock-Price-Pridiction/
 ├── src/
 │   ├── data_fetcher.py          # Data acquisition module
 │   ├── technical_indicators.py  # Technical analysis functions
@@ -23,14 +23,14 @@ stock_prediction_project/
 │   ├── model_builder.py         # LSTM model architecture
 │   ├── predictor.py             # Prediction generation module
 │   ├── visualizer.py            # Plotting and visualization functions
-│   ├── main.py                  # Main execution script
+│   ├── main.py                  # Main execution script with StockPricePrediction class
 │   ├── test_modules.py          # Basic module tests
 │   └── test_edge_cases.py       # Comprehensive edge case tests
-├── models/                      # Saved model artifacts
-├── cache/                       # Cached data files
-├── outputs/                     # Generated outputs and plots
-├── config.py                    # Configuration parameters
+├── models/                      # Saved model artifacts (model_weights.weights.h5)
+├── cache/                       # Cached data files (AAPL_1y.pkl, etc.)
+├── config.py                    # Comprehensive configuration parameters
 ├── requirements.txt             # Python dependencies
+├── test_plot.png               # Sample output plot
 └── README.md                    # This file
 ```
 
@@ -39,7 +39,7 @@ stock_prediction_project/
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd stock-price-prediction
+   cd Stock-Price-Pridiction
    ```
 
 2. **Install dependencies**:
@@ -47,10 +47,22 @@ stock_prediction_project/
    pip install -r requirements.txt
    ```
 
-3. **Create required directories**:
+3. **Create required directories** (if not already present):
    ```bash
-   mkdir -p models cache outputs/plots outputs/predictions logs
+   mkdir -p models cache
    ```
+
+### Dependencies
+
+The project includes the following key dependencies:
+
+- **Core**: pandas, numpy, scikit-learn
+- **Data Fetching**: yfinance
+- **Machine Learning**: tensorflow, keras
+- **Visualization**: matplotlib, seaborn, plotly
+- **Web Application**: streamlit (optional)
+- **Development**: pytest, jupyter, notebook
+- **Utilities**: python-dateutil, pytz, requests
 
 ## Quick Start
 
@@ -59,17 +71,29 @@ stock_prediction_project/
 ```python
 from src.main import StockPricePrediction
 
-# Initialize the system
-predictor = StockPricePrediction(['AAPL'])
+# Initialize the system with configuration
+predictor = StockPricePrediction(
+    tickers=['AAPL'], 
+    period='2y',
+    sequence_length=60,
+    cache_dir='cache',
+    model_dir='models'
+)
 
-# Fetch and prepare data
+# Fetch and prepare data with technical indicators
 data = predictor.fetch_and_prepare_data('AAPL')
 
-# Train the model
+# Train the LSTM model
 predictor.train_model(data)
 
-# Generate predictions
+# Generate future predictions (30 days by default)
 predictions = predictor.generate_predictions(data, n_steps=30)
+
+# Access prediction results
+if predictions:
+    print(f"Predictions: {predictions['predictions']}")
+    print(f"Lower bound: {predictions['lower_bound']}")
+    print(f"Upper bound: {predictions['upper_bound']}")
 ```
 
 ### Command Line Usage
@@ -85,13 +109,47 @@ python src/test_edge_cases.py
 
 ## Configuration
 
-Edit `config.py` to customize:
+The `config.py` file provides comprehensive configuration options:
 
-- **Stock symbols** to analyze
-- **Model hyperparameters** (LSTM units, dropout rate, learning rate)
-- **Technical indicator parameters** (periods, thresholds)
-- **Prediction settings** (forecast days, confidence levels)
-- **Visualization preferences**
+### Stock Symbols
+```python
+STOCK_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'NVDA', 'META']
+```
+
+### Data Configuration
+- **Period**: '2y' (1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max)
+- **Cache directory**: 'cache'
+- **Cache refresh**: False (set to True to force refresh)
+
+### Model Hyperparameters
+- **Sequence length**: 60 time steps
+- **LSTM units**: [50, 50] (two layers with 50 units each)
+- **Dropout rate**: 0.2
+- **Learning rate**: 0.001
+- **Batch size**: 32
+- **Epochs**: 100
+- **Validation split**: 0.15
+- **Test split**: 0.15
+
+### Technical Indicators
+- **SMA periods**: [20, 50, 200]
+- **EMA periods**: [12, 26]
+- **RSI period**: 14
+- **MACD**: Fast=12, Slow=26, Signal=9
+- **Bollinger Bands**: Period=20, Std Dev=2
+- **Volume MA period**: 20
+
+### Prediction Settings
+- **Forecast days**: 30
+- **Confidence level**: 0.95
+- **Walk-forward window**: 60
+
+### Visualization Settings
+- **Figure size**: (15, 10)
+- **Style**: 'seaborn'
+- **Save plots**: True
+- **Format**: 'png'
+- **DPI**: 300
 
 ## Model Architecture
 
@@ -155,24 +213,45 @@ python src/test_edge_cases.py
 
 ## API Reference
 
+### StockPricePrediction Class
+```python
+from src.main import StockPricePrediction
+
+# Initialize with custom parameters
+predictor = StockPricePrediction(
+    tickers=['AAPL', 'GOOGL'], 
+    period='2y',
+    sequence_length=60,
+    cache_dir='cache',
+    model_dir='models'
+)
+```
+
 ### DataFetcher
 ```python
+from src.data_fetcher import DataFetcher
+
 fetcher = DataFetcher(cache_dir='cache')
-data = fetcher.fetch_data(['AAPL'], period='1y')
+data = fetcher.fetch_data(['AAPL'], period='2y')
 ```
 
 ### Technical Indicators
 ```python
-from src.technical_indicators import SMA, EMA, RSI, MACD, Bollinger_Bands
+from src.technical_indicators import SMA, EMA, RSI, MACD, Bollinger_Bands, Volume_Indicators
 
-sma = SMA(data['Close'], window=20)
-rsi = RSI(data['Close'], window=14)
-macd = MACD(data['Close'])
-bb = Bollinger_Bands(data['Close'])
+# Calculate individual indicators
+sma_20 = SMA(data['Close'], 20)
+ema_12 = EMA(data['Close'], 12)
+rsi = RSI(data['Close'])
+macd_data = MACD(data['Close'])
+bb_data = Bollinger_Bands(data['Close'])
+vol_data = Volume_Indicators(data)
 ```
 
 ### DataPreprocessor
 ```python
+from src.preprocessor import DataPreprocessor
+
 preprocessor = DataPreprocessor(sequence_length=60)
 X_train, X_val, X_test, y_train, y_val, y_test = preprocessor.preprocess_data(data)
 ```
@@ -181,8 +260,32 @@ X_train, X_val, X_test, y_train, y_val, y_test = preprocessor.preprocess_data(da
 ```python
 from src.model_builder import StockPredictionModel
 
-model = StockPredictionModel(sequence_length=60, n_features=1)
-history = model.train(X_train, y_train, X_val, y_val)
+model = StockPredictionModel(sequence_length=60, n_features=n_features)
+history = model.train(
+    X_train, y_train, 
+    X_val, y_val,
+    epochs=100,
+    batch_size=32,
+    checkpoint_path='models/model_weights.weights.h5'
+)
+```
+
+### Prediction Generation
+```python
+from src.predictor import StockPredictor
+
+predictor = StockPredictor(model, preprocessor)
+predictions = predictor.generate_predictions(X, n_steps=30)
+```
+
+### Visualization
+```python
+from src.visualizer import StockVisualizer
+
+visualizer = StockVisualizer()
+visualizer.plot_technical_indicators(data, indicators_dict)
+visualizer.plot_training_history(history)
+visualizer.plot_predictions(actual_prices, predictions, confidence_intervals)
 ```
 
 ## Troubleshooting

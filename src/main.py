@@ -115,7 +115,7 @@ class StockPricePrediction:
             X_val, y_val,
             epochs=100,
             batch_size=32,
-            checkpoint_path='models/model_weights.h5'
+            checkpoint_path='models/model_weights.weights.h5'
         )
         
         # Initialize predictor with trained model

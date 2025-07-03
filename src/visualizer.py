@@ -2,19 +2,27 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Literal
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 class StockVisualizer:
-    def __init__(self, style: str = 'seaborn'):
+    def __init__(self, style: Literal['whitegrid', 'darkgrid', 'white', 'dark', 'ticks'] = 'whitegrid'):
         """
         Initialize the visualizer with a plotting style.
         
         Args:
-            style (str): Matplotlib style to use
+            style: Seaborn style to use. Valid options: 'whitegrid', 'darkgrid', 'white', 'dark', 'ticks'
         """
-        plt.style.use(style)
+        # Validate style parameter
+        valid_styles = ['whitegrid', 'darkgrid', 'white', 'dark', 'ticks']
+        if style not in valid_styles:
+            style = 'whitegrid'  # fallback to default
+        
+        # Set seaborn style instead of matplotlib style
+        sns.set_style(style)
+        # Set color palette for better aesthetics
+        sns.set_palette("husl")
         
     def plot_stock_prices(self, data: pd.DataFrame, title: str = "Stock Price History",
                          figsize: Tuple[int, int] = (15, 7)) -> None:
@@ -54,9 +62,10 @@ class StockVisualizer:
             indicators (Dict[str, pd.DataFrame]): Dictionary of technical indicators
             figsize (Tuple[int, int]): Figure size
         """
-        fig = make_subplots(rows=3, cols=1, shared_xaxis=True,
+        fig = make_subplots(rows=3, cols=1, 
                            vertical_spacing=0.05,
-                           row_heights=[0.5, 0.25, 0.25])
+                           row_heights=[0.5, 0.25, 0.25],
+                           shared_xaxes=True)
         
         # Plot candlestick
         fig.add_trace(go.Candlestick(x=data.index,
@@ -98,9 +107,12 @@ class StockVisualizer:
             fig.add_trace(go.Scatter(x=data.index, y=indicators['RSI'],
                                    name='RSI'),
                          row=3, col=1)
-            fig.add_hline(y=70, line_dash="dash", line_color="red",
+            # Add horizontal lines for RSI overbought/oversold levels
+            fig.add_shape(type="line", x0=data.index[0], x1=data.index[-1], 
+                         y0=70, y1=70, line=dict(color="red", dash="dash"),
                          row=3, col=1)
-            fig.add_hline(y=30, line_dash="dash", line_color="green",
+            fig.add_shape(type="line", x0=data.index[0], x1=data.index[-1], 
+                         y0=30, y1=30, line=dict(color="green", dash="dash"),
                          row=3, col=1)
         
         fig.update_layout(

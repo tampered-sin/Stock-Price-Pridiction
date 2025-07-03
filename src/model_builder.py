@@ -91,7 +91,7 @@ class StockPredictionModel:
     def train(self, X_train: np.ndarray, y_train: np.ndarray,
               X_val: np.ndarray, y_val: np.ndarray,
               epochs: int = 100, batch_size: int = 32,
-              checkpoint_path: str = 'models/model_weights.h5') -> tf.keras.callbacks.History:
+              checkpoint_path: str = 'models/model_weights.weights.h5') -> tf.keras.callbacks.History:
         """
         Train the model with early stopping and learning rate scheduling.
         
